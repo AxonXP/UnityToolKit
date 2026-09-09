@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 968590358f958f64fb16c1d192cc3fa9, type: 3}
+  m_Name: Empty
+  m_EditorClassIdentifier: 
+  visual: {fileID: 0}
+  projectile: {fileID: 2346428702755028740, guid: 34a8395950338d24f8bde54b0f58ec0d, type: 3}
+  range: 0.3
+  damage: 1
+  projectileSpeed: 1
+  projectileSize: 1
+  attackSpeed: 0.5
+  projectileKnockback: 4
+  shotsFired: 1
+  trackingPower: 0
+  piercing: 0

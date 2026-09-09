@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dfcef46ba2185c7478b1b5ced2e2d294, type: 3}
+  m_Name: Zombie
+  m_EditorClassIdentifier: 
+  entityStatistics:
+    maxhealth: 10
+    wealth: 1
+  weaponStatistics:
+    speed: 0
+    projectileCount: 0
+    projectileSpread: 0
+    burstCount: 0
+    burstGap: 0
+    magazineSize: 0
+    reloadTime: 0
+  projectileStatistics:
+    damage: 0
+    knockback: 0
+    range: 0
+    speed: 0
+    size: 0
+    heightOffset: 0
+  specialProjectileStatistics:
+    piercing: 0
+    split: 0
+    chaining: 0
+    explosive: 0
+    ricochet: 0
+    homingStrength: 0
+  movementStatistics:
+    speed: 3
+    acceleration: 2
+    decceleration: 2
