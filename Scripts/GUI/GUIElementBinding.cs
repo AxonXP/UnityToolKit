@@ -7,16 +7,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-/// <summary>
-/// One inspector-configured HUD element: a Source (what numeric value to read, via reflection - see
-/// ElementType) plus a Display (how to present that value - see DisplayMode). Mirrors AnimatorBinding's
-/// source+memberName pattern so the source component never needs to know GUIManager exists.
-///
-/// Both ElementType and DisplayMode follow the project's enum-switched-internally convention (see
-/// Weapon-style enums elsewhere): adding a new source kind or a new display kind is one enum case
-/// (spaced by 10 so inserting never renumbers saved data) + its [ShowIf]-gated fields + one switch arm
-/// in Initialize/Apply - never a new class or a rewrite of existing cases.
-/// </summary>
 [System.Serializable]
 public class GUIElementBinding
 {
@@ -59,7 +49,9 @@ public class GUIElementBinding
     [ShowIf(nameof(displayMode), DisplayMode.Bar)]
     [SerializeField] Image barImage;
     [ShowIf(nameof(displayMode), DisplayMode.Bar)]
-    [SerializeField] float barMaxValue = 1f;
+    [Tooltip("Numeric field/property on Source to read every frame, or a numeric-returning method that takes zero args or one enum arg (e.g. MoneyManager.GetBalance(Currency) - one dropdown entry per enum value).")]
+    [MenuDropdown(nameof(GetMemberOptions))]
+    [SerializeField] string barMaxValue;
 
     const BindingFlags ReflectFlags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
     static readonly Dictionary<Type, (string Label, string Value)[]> memberOptionCache = new();
@@ -71,11 +63,6 @@ public class GUIElementBinding
         typeof(object), typeof(UnityEngine.Object), typeof(Component), typeof(Behaviour), typeof(MonoBehaviour),
     };
 
-    // Populates the memberName dropdown with numeric fields/properties found on whichever Source is
-    // currently assigned above, plus numeric-returning methods that take zero args or a single enum
-    // arg (one dropdown entry per enum value, e.g. "GetBalance(coins)") - this is what lets a value
-    // that lives behind a keyed lookup (MoneyManager.GetBalance(Currency), an ammo-per-type getter,
-    // ...) get bound exactly like a plain field, with no MoneyManager-specific code in here.
     DropdownList<string> GetMemberOptions()
     {
         DropdownList<string> options = new();
@@ -121,9 +108,6 @@ public class GUIElementBinding
 
     static bool IsNumeric(Type t) => t == typeof(float) || t == typeof(int) || t == typeof(double) || t == typeof(long);
 
-    // Matches how GetMemberOptionEntries built the dropdown: same name, numeric return, and the same
-    // 0-arg/1-enum-arg shape - found by scanning rather than Type.GetMethod(name) so an overloaded
-    // method name (MoneyManager.UseMoney has two overloads) can never throw AmbiguousMatchException.
     static MethodInfo FindMethod(Type type, string name, bool wantsEnumArg)
     {
         foreach (MethodInfo candidate in type.GetMethods(ReflectFlags))
@@ -140,6 +124,9 @@ public class GUIElementBinding
     [NonSerialized] MemberInfo member;
     [NonSerialized] MethodInfo method;
     [NonSerialized] object methodArg;
+    [NonSerialized] MemberInfo maxMember;
+    [NonSerialized] MethodInfo maxMethod;
+    [NonSerialized] object maxMethodArg;
     [NonSerialized] bool initialized;
     [NonSerialized] List<GameObject> spawnedIcons = new();
 
@@ -151,7 +138,11 @@ public class GUIElementBinding
             return;
         }
 
-        if (!ResolveMember(source.GetType()))
+        if (!ResolveMember(source.GetType(), memberName, out member, out method, out methodArg))
+            return;
+
+        if (displayMode == DisplayMode.Bar && !string.IsNullOrEmpty(barMaxValue)
+            && !ResolveMember(source.GetType(), barMaxValue, out maxMember, out maxMethod, out maxMethodArg))
             return;
 
         if (!ValidateDisplayRefs())
@@ -160,22 +151,26 @@ public class GUIElementBinding
         initialized = true;
     }
 
-    // memberName is either a plain field/property name, or "MethodName|EnumValueName" for a method
-    // taking one enum argument (see GetMemberOptionEntries).
-    bool ResolveMember(Type type)
+    // name is either a plain field/property name, or "MethodName|EnumValueName" for a method
+    // taking one enum argument (see GetMemberOptionEntries). Used for both memberName and barMaxValue.
+    static bool ResolveMember(Type type, string name, out MemberInfo resolvedMember, out MethodInfo resolvedMethod, out object resolvedMethodArg)
     {
-        int sep = memberName.IndexOf('|');
-        string namePart = sep >= 0 ? memberName.Substring(0, sep) : memberName;
+        resolvedMember = null;
+        resolvedMethod = null;
+        resolvedMethodArg = null;
+
+        int sep = name.IndexOf('|');
+        string namePart = sep >= 0 ? name.Substring(0, sep) : name;
 
         if (sep < 0)
         {
-            member = (MemberInfo)type.GetField(namePart, ReflectFlags) ?? type.GetProperty(namePart, ReflectFlags);
-            if (member != null)
+            resolvedMember = (MemberInfo)type.GetField(namePart, ReflectFlags) ?? type.GetProperty(namePart, ReflectFlags);
+            if (resolvedMember != null)
                 return true;
         }
 
-        method = FindMethod(type, namePart, wantsEnumArg: sep >= 0);
-        if (method == null)
+        resolvedMethod = FindMethod(type, namePart, wantsEnumArg: sep >= 0);
+        if (resolvedMethod == null)
         {
             Debug.LogWarning($"GUIElementBinding could not find field/property/method '{namePart}' on {type.Name}.");
             return false;
@@ -183,15 +178,15 @@ public class GUIElementBinding
 
         if (sep >= 0)
         {
-            Type enumType = method.GetParameters()[0].ParameterType;
-            string enumValueName = memberName.Substring(sep + 1);
+            Type enumType = resolvedMethod.GetParameters()[0].ParameterType;
+            string enumValueName = name.Substring(sep + 1);
             if (!Enum.IsDefined(enumType, enumValueName))
             {
                 Debug.LogWarning($"GUIElementBinding: '{enumValueName}' is not a value of {enumType.Name}.");
-                method = null;
+                resolvedMethod = null;
                 return false;
             }
-            methodArg = Enum.Parse(enumType, enumValueName);
+            resolvedMethodArg = Enum.Parse(enumType, enumValueName);
         }
 
         return true;
@@ -226,11 +221,11 @@ public class GUIElementBinding
         return true;
     }
 
-    float ReadValue()
+    float ReadValue(MemberInfo readMember, MethodInfo readMethod, object readMethodArg)
     {
-        object value = method != null
-            ? method.Invoke(source, methodArg == null ? null : new[] { methodArg })
-            : member is FieldInfo field ? field.GetValue(source) : ((PropertyInfo)member).GetValue(source);
+        object value = readMethod != null
+            ? readMethod.Invoke(source, readMethodArg == null ? null : new[] { readMethodArg })
+            : readMember is FieldInfo field ? field.GetValue(source) : ((PropertyInfo)readMember).GetValue(source);
         return Convert.ToSingle(value);
     }
 
@@ -239,7 +234,7 @@ public class GUIElementBinding
         if (!initialized)
             return;
 
-        float value = ReadValue();
+        float value = ReadValue(member, method, methodArg);
         switch (displayMode)
         {
             case DisplayMode.IconImages:
@@ -275,6 +270,7 @@ public class GUIElementBinding
 
     void ApplyBar(float value)
     {
-        barImage.fillAmount = barMaxValue > 0f ? Mathf.Clamp01(value / barMaxValue) : 0f;
+        float max = maxMember != null || maxMethod != null ? ReadValue(maxMember, maxMethod, maxMethodArg) : 1f;
+        barImage.fillAmount = max > 0f ? Mathf.Clamp01(value / max) : 0f;
     }
 }

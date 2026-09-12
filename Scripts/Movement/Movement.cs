@@ -45,9 +45,6 @@ public abstract class Movement : MonoBehaviour
     [LayoutStart("Basic Movement Statistics", ELayout.FoldoutBox)]
     [SerializeField] public List<MovementStatistics> moveStats;
     [ReadOnly] public MovementStatistics currentMoveStats;
-    // Unity always serializes a real (zeroed) MovementStatistics instance for this field - it's
-    // never actually null at runtime on a saved prefab/scene object - so this is the real signal
-    // for whether Entity.RecalculateRuntimeStats has claimed currentMoveStats yet.
     [System.NonSerialized] public bool currentMoveStatsClaimed;
     [LayoutStart("Inputs", ELayout.FoldoutBox)]
     [SerializeField][ReadOnly] public Vector2 movementInput;

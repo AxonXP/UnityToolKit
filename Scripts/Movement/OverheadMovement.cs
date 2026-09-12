@@ -15,8 +15,6 @@ public class OverheadMovement : Movement
 
     void Start()
     {
-        // may already be set by Entity.RecalculateRuntimeStats (runs in Awake, before this) -
-        // only fall back to the designer-authored preset if nothing claimed it first
         if (!currentMoveStatsClaimed)
             currentMoveStats = moveStats[0];
         ComponentGrab();

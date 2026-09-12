@@ -28,11 +28,6 @@ public class OverheadFakeVertical : MonoBehaviour
         EnsureShadowInitialized();
     }
 
-    /// <summary>Captures the shadow's authored scale exactly once. Awake() alone isn't reliable here
-    /// - Projectile.SetUpProjectile calls SetHeight (and therefore ShadowUpdate) on the temp prefab
-    /// asset built by ProjectileAttack, which never runs Awake since it's not a live scene instance.
-    /// Without this guard, initialShadowSize stays at its default zero and every shadow ends up
-    /// baked far too small.</summary>
     void EnsureShadowInitialized()
     {
         if (shadowInitialized) return;
@@ -63,9 +58,6 @@ public class OverheadFakeVertical : MonoBehaviour
         airVelocity = force;
     }
 
-    /// <summary>Snaps directly to a height instead of launching into it - e.g. a projectile
-    /// matching the shooter's current airHeight at spawn. Leaves airVelocity untouched, so gravity
-    /// (if any) keeps acting on it from here rather than resetting to a fresh launch.</summary>
     public void SetHeight(float height)
     {
         airHeight = Mathf.Clamp(height, 0, maxHeight);

@@ -2,10 +2,11 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.InputSystem;
 
-public class OverheadMovementKeyController : MonoBehaviour
+public class PlatformerMovementKeyController : MonoBehaviour
 {
     bool holdingAttack = false;
     public UnityEvent pause;
+    
     public void OnMove(InputValue value)
     {
         SendMessage("MoveInputUpdate", value.Get<Vector2>());
@@ -24,6 +25,11 @@ public class OverheadMovementKeyController : MonoBehaviour
     public void OnPause(InputValue value)
     {
         pause.Invoke();
+    }
+
+    public void OnDash(InputValue value)
+    {
+        SendMessage("Dash");
     }
 
     void Update()
