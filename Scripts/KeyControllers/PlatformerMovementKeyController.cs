@@ -6,7 +6,7 @@ public class PlatformerMovementKeyController : MonoBehaviour
 {
     bool holdingAttack = false;
     public UnityEvent pause;
-    
+
     public void OnMove(InputValue value)
     {
         SendMessage("MoveInputUpdate", value.Get<Vector2>());
@@ -32,7 +32,7 @@ public class PlatformerMovementKeyController : MonoBehaviour
         SendMessage("Dash");
     }
 
-    void Update()
+    public virtual void Update()
     {
         if (holdingAttack) BroadcastMessage("SendAttack");
     }
