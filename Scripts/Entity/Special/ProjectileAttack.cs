@@ -17,7 +17,7 @@ public class ProjectileAttack : MonoBehaviour
 
     public GameObject CreateTempProjPrefab(GameObject projectile)
     {
-        return PrefabUtility.SaveAsPrefabAsset(projectile, "Assets/Temp/TempProjectile.prefab");
+        return null; //PrefabUtility.SaveAsPrefabAsset(projectile, "Assets/Temp/TempProjectile.prefab");
     }
 
     /// <summary>

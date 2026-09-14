@@ -1,5 +1,4 @@
 using SaintsField.Playa;
-using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -40,7 +39,7 @@ public class PlatformerMovement : Movement
         }
     }
 
-    public void Dash()
+    public virtual void Dash()
     {
         if (moveState == MovementState.basic)
         {
