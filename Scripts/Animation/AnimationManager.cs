@@ -17,7 +17,20 @@ public class AnimationManager : MonoBehaviour
             animator = GetComponent<Animator>();
 
         foreach (AnimatorBinding binding in bindings)
+        {
+            binding.SetOwnerAnimator(animator);
             binding.Initialize(animator);
+        }
+    }
+
+    // Pushes this manager's assigned Animator into each binding so the edit-time dropdowns
+    // filter against exactly that Animator.
+    void OnValidate()
+    {
+        if (bindings == null)
+            return;
+        foreach (AnimatorBinding binding in bindings)
+            binding?.SetOwnerAnimator(animator);
     }
 
     void Update()

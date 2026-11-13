@@ -51,7 +51,7 @@ public class AnimatorBinding
         if (source == null || string.IsNullOrEmpty(parameterName))
             return options;
 
-        AnimatorControllerParameterType? paramType = GetParameterType(GetNearbyAnimator(), parameterName);
+        AnimatorControllerParameterType? paramType = GetParameterType(ownerAnimator, parameterName);
         if (paramType == null)
             return options;
 
@@ -72,16 +72,11 @@ public class AnimatorBinding
         return options;
     }
 
-    // Best-effort Animator lookup for edit-time dropdown filtering only - assumes Source lives on
-    // (or near) the same GameObject as the AnimationManager/Animator, which is the intended setup.
-    Animator GetNearbyAnimator()
-    {
-        if (source == null)
-            return null;
-        return source.GetComponent<Animator>()
-            ?? source.GetComponentInParent<Animator>()
-            ?? source.GetComponentInChildren<Animator>();
-    }
+    // The Animator assigned on the owning AnimationManager, pushed in via SetOwnerAnimator. The
+    // edit-time dropdown uses only this - no searching around Source - so it always filters against
+    // the same Animator the bindings will actually drive.
+    [NonSerialized] Animator ownerAnimator;
+    public void SetOwnerAnimator(Animator animator) => ownerAnimator = animator;
 
     static (string Name, Type Type, bool Writable)[] GetAllMembers(Type type)
     {
